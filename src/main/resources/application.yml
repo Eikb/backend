@@ -12,11 +12,4 @@ spring:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-swagger:
-  contact-name: Enes Ilkbay
-  contact-mail: enes.ilkbay@gmail.com
-  app-name: WumT
-  app-description: "Diese Applikation wude erstellt, um den Prozess der Prüfung zu digitalisieren"
-  app-version: 1.0.0
-  app-license-url: https://www.apache.org/licenses/LICENSE-2.0.html
-  app-license: Apache 2.0
+
