@@ -1,13 +1,14 @@
 package de.vikz.wumtbackend.questionCatalog;
 
 
-import de.vikz.wumtbackend.modul.Modul;
+import de.vikz.wumtbackend.category.Category;
 import de.vikz.wumtbackend.question.Question;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 
@@ -25,10 +26,14 @@ public class QuestionCatalog {
 
     private String name;
 
-    @ManyToMany
+    @Nullable
+    @OneToMany
     private List<Question> questions;
 
-    @OneToOne
-    private Modul modul;
+    private String modul;
+
+    @Nullable
+    @ManyToMany
+    private List<Category> categories;
 
 }

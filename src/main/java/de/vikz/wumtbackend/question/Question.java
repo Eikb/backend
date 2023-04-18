@@ -1,5 +1,6 @@
 package de.vikz.wumtbackend.question;
 
+import de.vikz.wumtbackend.category.Category;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +24,11 @@ public class Question {
     private String answerB;
     private String answerC;
     private String answerD;
-    private Integer correctAnswer;
+    private String correctAnswer;
+
+    private String categoryName;
+
+    @ManyToOne
+    private Category category;
 
 }
