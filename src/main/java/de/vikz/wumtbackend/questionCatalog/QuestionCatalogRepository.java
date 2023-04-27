@@ -17,5 +17,6 @@ public interface QuestionCatalogRepository extends JpaRepository<QuestionCatalog
     @Query("update QuestionCatalog q set q.name = ?1, q.modul = ?2 WHERE q.id = ?3")
     void updateNameAndModulBy(String name, String modul, Integer id);
 
+    QuestionCatalog findByName(String name);
 
 }

@@ -55,6 +55,12 @@ public class QuestionCatalogController {
         return ResponseEntity.ok(questionCatalog.stream().iterator().next().getCategories());
     }
 
+    @GetMapping("/categoryname/{name}")
+    public ResponseEntity<List<Category>> getAllCategorieName(@PathVariable("name") String name) {
+        QuestionCatalog questionCatalog = questionCatalogRepository.findByName(name);
+        return ResponseEntity.ok(questionCatalog.getCategories());
+    }
+
     @DeleteMapping("/question/{questionId}/{catalogId}")
     public ResponseEntity<String> deleteQuestion(@PathVariable("questionId") Integer questionId, @PathVariable("catalogId") Integer catalogId) {
 
