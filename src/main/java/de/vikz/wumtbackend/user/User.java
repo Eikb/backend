@@ -30,7 +30,8 @@ public class User implements UserDetails {
     private String password;
 
     @Nullable
-    @OneToMany
+    @JoinColumn(name = "writtenExams_id")
+    @ManyToMany
     private List<Exam> writtenExams;
 
     @Enumerated(EnumType.STRING)

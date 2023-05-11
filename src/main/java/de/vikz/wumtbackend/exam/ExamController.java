@@ -11,11 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -26,33 +24,54 @@ public class ExamController {
     @Autowired
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final ResultsRepository resultsRepository;
+    private final CheckResultRepository checkResultRepository;
 
     public ExamController(ExamRepository examRepository,
                           QuestionCatalogRepository questionCatalogRepository,
                           QuestionRepository questionRepository, JwtService jwtService,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          ResultsRepository resultsRepository,
+                          CheckResultRepository checkResultRepository) {
         this.examRepository = examRepository;
         this.questionCatalogRepository = questionCatalogRepository;
         this.questionRepository = questionRepository;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.resultsRepository = resultsRepository;
+        this.checkResultRepository = checkResultRepository;
     }
 
     @GetMapping("/publicexam")
     public ResponseEntity<List<Exam>> getAllExams() {
-        return ResponseEntity.ok(examRepository.findAll());
+        List<Exam> exams = examRepository.findAll();
+
+        Date currentDate = new Date();
+        currentDate.setHours(currentDate.getHours() + 2);
+
+
+        exams = exams.stream().map(e -> {
+            if (e.getStartTime().before(currentDate) && e.getEndTime().after(currentDate)) {
+                e.setStatus("Aktiv");
+            } else {
+                e.setStatus("Nicht Aktiv");
+            }
+            examRepository.save(e);
+            return e;
+        }).collect(Collectors.toList());
+
+
+        return ResponseEntity.ok(exams);
     }
 
     @PostMapping("/exam/{catalogId}")
     public Object createExam(@RequestBody Exam exam, @PathVariable("catalogId") String catalogName) {
+
         QuestionCatalog catalog = questionCatalogRepository.findByName(catalogName);
         List<Question> finalQuestions = new ArrayList<>(Collections.EMPTY_LIST);
 
 
         List<List<Question>> questionsFiltered = new ArrayList<>();
-        if (Objects.equals(exam.getExamType(), "static")) {
-            List<Question> staticQuestions = exam.getStaticQuestions();
-        }
 
 
         if (Objects.equals(exam.getExamType(), "random")) {
@@ -84,6 +103,21 @@ public class ExamController {
             }
 
             exam.setQuestionList(finalQuestions.stream().toList());
+
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(exam.getStartTime());
+            calendar.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
+
+            exam.setStartTime(calendar.getTime());
+
+            examRepository.save(exam);
+
+        } else {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(exam.getStartTime());
+            calendar.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
+            exam.setStartTime(calendar.getTime());
             examRepository.save(exam);
 
         }
@@ -92,10 +126,20 @@ public class ExamController {
 
     @DeleteMapping("/exam/{id}")
     public ResponseEntity<String> deleteExam(@PathVariable("id") Integer examId) {
-        List<Exam> writeenExam = new ArrayList<>();
-        userRepository.findAll().forEach(e -> e.setWrittenExams(writeenExam));
+        List<Exam> emptyWrittenExam = new ArrayList<>();
+        List<Question> emptyQuestionList = new ArrayList<>();
+        List<Question> emptyAnswerList = new ArrayList<>();
+
+
+        userRepository.findAll().forEach(e -> e.setWrittenExams(emptyWrittenExam));
         userRepository.saveAll(userRepository.findAll());
+        examRepository.findAll().forEach(e -> e.setQuestionList(emptyQuestionList));
+        examRepository.saveAll(examRepository.findAll());
+        resultsRepository.findAll().forEach(e -> e.setExam(null));
+        resultsRepository.deleteAll();
+        examRepository.findAll().forEach(e -> e.setQuestionList(null));
         examRepository.deleteAll();
+
         return ResponseEntity.ok("Deleted");
     }
 
@@ -113,26 +157,75 @@ public class ExamController {
         List<Question> correctAnswers = new ArrayList<>();
         List<Question> falseAnswers = new ArrayList<>();
 
-        List<List<Question>> collectedList = new ArrayList<>();
+        List<String> correctAnswersPdf = new ArrayList<>();
+        List<String> fasleAnswersPdf = new ArrayList<>();
 
-        for (int i = 0; i < answersList.size(); i++) {
-            if (answers.get(i).equals(answersList.get(i).getCorrectAnswer())) {
-                correctAnswers.add(answersList.get(i));
-            } else {
-                falseAnswers.add(answersList.get(i));
+
+        List<List<Object>> collectedList = new ArrayList<>();
+        List<CheckResult> checkResults = new ArrayList<>();
+
+        if (answersList.size() != 0) {
+            for (int i = 0; i < answersList.size(); i++) {
+                if (answers.get(i).equals(answersList.get(i).getCorrectAnswer())) {
+                    correctAnswers.add(answersList.get(i));
+                } else {
+                    falseAnswers.add(answersList.get(i));
+                }
+                CheckResult checkResult = new CheckResult();
+                checkResult.setSelectedAnswer(answers.get(i));
+                checkResult.setCorrectAnswer(answersList.get(i).getCorrectAnswer());
+                checkResults.add(checkResult);
             }
+        } else {
+            for (int i = 0; i < exam.getCorrectAnswers().size(); i++) {
+                if (answers.get(i).equals(exam.getCorrectAnswers().get(i))) {
+                    correctAnswersPdf.add(answers.get(i));
+                } else {
+                    fasleAnswersPdf.add(answers.get(i));
+                }
+                CheckResult checkResult = new CheckResult();
+                checkResult.setSelectedAnswer(answers.get(i));
+                checkResult.setCorrectAnswer(exam.getCorrectAnswers().get(i));
+                checkResults.add(checkResult);
 
+            }
         }
-        collectedList.add(correctAnswers);
-        collectedList.add(falseAnswers);
+
+        if (answersList.size() != 0) {
+            collectedList.add(Collections.singletonList(correctAnswers));
+            collectedList.add(Collections.singletonList(falseAnswers));
+        } else {
+            collectedList.add(Collections.singletonList(correctAnswersPdf));
+            collectedList.add(Collections.singletonList(fasleAnswersPdf));
+        }
         bearerToken = bearerToken.substring(7);
 
         String username = jwtService.extractUsername(bearerToken);
         User user = userRepository.findByEmail(username).stream().iterator().next();
+        List<Exam> test = user.getWrittenExams();
+        test.add(exam);
         assert user.getWrittenExams() != null;
-        user.getWrittenExams().add(exam);
+        user.setWrittenExams(test);
         userRepository.save(user);
+
+
+        checkResultRepository.saveAll(checkResults);
+
+        Results results = new Results();
+        results.setFirstName(user.getFirstName());
+        results.setLastName(user.getLastName());
+        results.setUserName(user.getUsername());
+        results.setCorrectAnswers(Collections.singletonList(collectedList.get(0)));
+        results.setFalseAnswers(Collections.singletonList(collectedList.get(1)));
+        results.setExam(exam);
+        results.setCorrectAnswersNumber(correctAnswersPdf.size());
+        results.setFalseAnswersNumber(fasleAnswersPdf.size());
+        results.setCheckResult(checkResults);
+        resultsRepository.save(results);
+
         return ResponseEntity.ok("Antworten wurden korrigiert");
 
     }
+
+
 }

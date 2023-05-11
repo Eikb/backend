@@ -21,7 +21,7 @@ import java.util.List;
 public class Exam {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.TABLE)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -32,16 +32,22 @@ public class Exam {
     private Date endTime;
     private String examType;
     private String modul;
+    private String status;
 
-    @ManyToMany
+    @OneToMany
     private List<Question> staticQuestions;
 
     @Transient
     private HashMap<String, Integer> categoryWithNumber;
 
-
-    @ManyToMany
+    @OneToMany
+    @JoinColumn(name = "question_list_id")
     private List<Question> questionList;
+
+    private Integer numberOfQuestions;
+
+    @ElementCollection
+    private List<String> correctAnswers;
 
 
 }

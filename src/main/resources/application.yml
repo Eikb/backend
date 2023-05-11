@@ -11,5 +11,18 @@ spring:
         format_sql: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  spring:
+    jackson:
+      serialization:
+        write_dates_as_timestamps=false
 
 
+  http:
+    multipart:
+      enabled=false:
+
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
