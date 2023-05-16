@@ -49,5 +49,7 @@ public class Exam {
     @ElementCollection
     private List<String> correctAnswers;
 
+    private byte[] pdfDocument;
+
 
 }
