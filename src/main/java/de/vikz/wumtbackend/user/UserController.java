@@ -1,5 +1,6 @@
 package de.vikz.wumtbackend.user;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,7 +19,7 @@ public class UserController {
     }
 
     @GetMapping("/")
-    private List<UserEntity> getAllUser() {
+    private ResponseEntity<List<UserEntity>> getAllUser() {
         List<User> users = userRepository.findAll();
         List<UserEntity> userEntities = new ArrayList<>();
 
@@ -31,7 +32,7 @@ public class UserController {
             return null;
         }).collect(Collectors.toList());
 
-        return userEntities;
+        return ResponseEntity.ok(userEntities);
 
     }
 
