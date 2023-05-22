@@ -27,9 +27,8 @@ public class UserController {
             UserEntity userEntity = new UserEntity();
             userEntity.setFirstName(e.getFirstName());
             userEntity.setLastName(e.getLastName());
-            userEntity.setRole(e.getRole().toString());
             userEntities.add(userEntity);
-            return null;
+            return 1;
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(userEntities);
