@@ -13,5 +13,7 @@ public class RegisterRequest {
     private String firstName;
     private String lastName;
     private String email;
+    private String university;
+    private String semester;
     private String password;
 }

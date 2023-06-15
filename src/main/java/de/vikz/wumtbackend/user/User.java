@@ -28,6 +28,9 @@ public class User implements UserDetails {
     private String lastName;
     private String email;
     private String password;
+    private String university;
+    private String semester;
+    private Boolean enabled;
 
     @Nullable
     @JoinColumn(name = "writtenExams_id")
@@ -64,6 +67,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 }

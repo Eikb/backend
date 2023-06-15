@@ -1,5 +1,6 @@
 package de.vikz.wumtbackend.exam;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -7,9 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Controller
 @RequestMapping("/api/v1/file")
@@ -28,6 +26,7 @@ public class UploadController {
         return "upload";
     }
 
+    @Operation(summary = "Upload PDF with ExamId")
     @PostMapping("/upload/{examName}") // //new annotation since 4.3
     public ResponseEntity<String> singleFileUpload(@RequestPart MultipartFile file,
                                                    RedirectAttributes redirectAttributes, @PathVariable String examName) throws IOException {
@@ -36,7 +35,6 @@ public class UploadController {
             redirectAttributes.addFlashAttribute("message", "Please select a file to upload");
             return ResponseEntity.ok("Datei ist leer");
         }
-
 
 
         // Get the file and save it somewhere

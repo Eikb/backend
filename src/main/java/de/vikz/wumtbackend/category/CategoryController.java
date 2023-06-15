@@ -2,6 +2,7 @@ package de.vikz.wumtbackend.category;
 
 import de.vikz.wumtbackend.questionCatalog.QuestionCatalog;
 import de.vikz.wumtbackend.questionCatalog.QuestionCatalogRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +22,7 @@ public class CategoryController {
         this.questionCatalogRepository = questionCatalogRepository;
     }
 
+    @Operation(summary = "Create Category")
     @PostMapping
     public ResponseEntity<String> createCategory(@RequestBody Category category) {
         Optional<QuestionCatalog> questionCatalog = questionCatalogRepository.findById(category.getCatalogId());
@@ -34,6 +36,7 @@ public class CategoryController {
         return ResponseEntity.ok("Kategorie wurde erstellt");
     }
 
+    @Operation(summary = "Get Categories by Id")
     @GetMapping("/{id}")
     public ResponseEntity<List<Category>> getCategoriesById(@PathVariable Integer id) {
         return ResponseEntity.ok(categoryRepository.findAllById(Collections.singleton(id)));

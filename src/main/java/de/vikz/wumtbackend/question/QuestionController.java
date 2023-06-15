@@ -3,6 +3,7 @@ package de.vikz.wumtbackend.question;
 import de.vikz.wumtbackend.category.CategoryRepository;
 import de.vikz.wumtbackend.questionCatalog.QuestionCatalog;
 import de.vikz.wumtbackend.questionCatalog.QuestionCatalogRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ public class QuestionController {
         this.categoryRepository = categoryRepository;
     }
 
+    @Operation(summary = "Create Question")
     @PostMapping("/{catalogId}")
     public ResponseEntity<String> createQuestion(@RequestBody Question question, @PathVariable("catalogId") Integer catalogId) {
         QuestionCatalog questionCatalog = questionCatalogRepository.findById(catalogId).stream().iterator().next();
@@ -41,6 +43,7 @@ public class QuestionController {
 
     }
 
+    @Operation(summary = "Delete Question")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteQuestion(@PathVariable Integer id) {
         questionRepository.deleteById(id);

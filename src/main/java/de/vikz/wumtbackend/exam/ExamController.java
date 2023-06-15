@@ -7,6 +7,7 @@ import de.vikz.wumtbackend.questionCatalog.QuestionCatalog;
 import de.vikz.wumtbackend.questionCatalog.QuestionCatalogRepository;
 import de.vikz.wumtbackend.user.User;
 import de.vikz.wumtbackend.user.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
@@ -47,6 +48,7 @@ public class ExamController {
         this.checkResultRepository = checkResultRepository;
     }
 
+    @Operation(summary = "Get All Exams")
     @GetMapping("/publicexam")
     public ResponseEntity<List<Exam>> getAllExams() {
         List<Exam> exams = examRepository.findAll();
@@ -69,6 +71,7 @@ public class ExamController {
         return ResponseEntity.ok(exams);
     }
 
+    @Operation(summary = "Create Exam")
     @PostMapping("/exam/{catalogId}")
     public Object createExam(@RequestBody Exam exam, @PathVariable("catalogId") String catalogName) {
 
@@ -129,6 +132,7 @@ public class ExamController {
         return ResponseEntity.ok("Erstellt");
     }
 
+    @Operation(summary = "Delete Exam")
     @DeleteMapping("/exam/{id}")
     public ResponseEntity<String> deleteExam(@PathVariable("id") Integer examId) {
         List<Exam> emptyWrittenExam = new ArrayList<>();
@@ -136,18 +140,21 @@ public class ExamController {
         List<Question> emptyAnswerList = new ArrayList<>();
 
 
-        userRepository.findAll().forEach(e -> e.setWrittenExams(emptyWrittenExam));
+        userRepository.findAll().stream().filter(e -> e.getWrittenExams().contains(examRepository.findById(examId).get())).forEach(e -> e.setWrittenExams(emptyWrittenExam));
         userRepository.saveAll(userRepository.findAll());
-        examRepository.findAll().forEach(e -> e.setQuestionList(emptyQuestionList));
-        examRepository.saveAll(examRepository.findAll());
-        resultsRepository.findAll().forEach(e -> e.setExam(null));
-        resultsRepository.deleteAll();
-        examRepository.findAll().forEach(e -> e.setQuestionList(null));
-        examRepository.deleteAll();
+        examRepository.findById(examId).get().setQuestionList(emptyQuestionList);
+        examRepository.save(examRepository.findById(examId).get());
+        resultsRepository.findAll().stream().filter(e -> e.getExam().equals(examRepository.findById(examId))).forEach(e -> {
+            e.setExam(null);
+        });
+        resultsRepository.deleteAll(resultsRepository.findByExam_Id(examId));
+        examRepository.findById(examId).get().setQuestionList(null);
+        examRepository.deleteById(examId);
 
         return ResponseEntity.ok("Deleted");
     }
 
+    @Operation(summary = "Get All Written Exams")
     @GetMapping("/written")
     public ResponseEntity<List<Exam>> getAllWrittenExams(@RequestHeader("Authorization") String bearerToken) {
         bearerToken = bearerToken.substring(7);
@@ -155,6 +162,7 @@ public class ExamController {
         return ResponseEntity.ok(user.getWrittenExams());
     }
 
+    @Operation(summary = "Check Answers")
     @PostMapping("/exampublic/answers/{id}")
     public ResponseEntity<String> checkAnswers(@RequestBody List<String> answers, @PathVariable("id") Integer examId, @RequestHeader("Authorization") String bearerToken) {
         Exam exam = examRepository.findById(examId).get();
@@ -223,14 +231,22 @@ public class ExamController {
         results.setCorrectAnswers(Collections.singletonList(collectedList.get(0)));
         results.setFalseAnswers(Collections.singletonList(collectedList.get(1)));
         results.setExam(exam);
-        results.setCorrectAnswersNumber(correctAnswersPdf.size());
-        results.setFalseAnswersNumber(fasleAnswersPdf.size());
+        if (exam.getExamType().equals("pdf")) {
+            results.setCorrectAnswersNumber(correctAnswersPdf.size());
+            results.setFalseAnswersNumber(fasleAnswersPdf.size());
+        } else {
+            results.setCorrectAnswersNumber(correctAnswers.size());
+            results.setFalseAnswersNumber(falseAnswers.size());
+        }
+
         results.setCheckResult(checkResults);
         resultsRepository.save(results);
 
         return ResponseEntity.ok("Antworten wurden korrigiert");
 
     }
+
+    @Operation(summary = "Upload PDF File")
     @RequestMapping(value = "/", method = RequestMethod.GET, produces = "application/pdf")
     public ResponseEntity<InputStreamResource> downloadPDFFile()
             throws IOException {
